@@ -3,6 +3,7 @@ package com.example.cameraxdemo
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.SurfaceTexture
+import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.util.Log
 import android.view.Surface
@@ -31,25 +32,27 @@ class MainActivity : AppCompatActivity() {
     private val REQUIRED_PERMISSIONS = arrayOf(
         Manifest.permission.CAMERA
     )
-    var cameraView: PreviewView? = null
+    //var cameraView: PreviewView? = null
+    var cameraView: TextureView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        cameraView = findViewById<PreviewView>(R.id.cameraView)
-        /*cameraView?.surfa.surfaceTextureListener = object : SurfaceTextureListener {
+        cameraView = findViewById<TextureView>(R.id.cameraView)
+        cameraView?.surfaceTextureListener = object : SurfaceTextureListener {
             private var mSurface: Surface? = null
             override fun onSurfaceTextureAvailable(
                 st: SurfaceTexture,
                 width: Int,
                 height: Int
             ) {
-                *//*mSurface = Surface(st)
+                /*mSurface = Surface(st)
                     renderer.attachOutputSurface(
                         mSurface, Size(width, height),
                         Surfaces.toSurfaceRotationDegrees(textureView.getDisplay().getRotation())
-                    )*//*
+                    )*/
+                Log.d("FAFA", "surfaceTextureListener : onSurfaceTextureAvailable")
             }
 
             override fun onSurfaceTextureSizeChanged(
@@ -57,24 +60,28 @@ class MainActivity : AppCompatActivity() {
                 width: Int,
                 height: Int
             ) {
-                *//*renderer.attachOutputSurface(
+                /*renderer.attachOutputSurface(
                         mSurface, Size(width, height),
                         Surfaces.toSurfaceRotationDegrees(textureView.getDisplay().getRotation())
-                    )*//*
+                    )*/
+                Log.d("FAFA", "surfaceTextureListener : onSurfaceTextureSizeChanged")
             }
 
             override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
-                *//*val surface = mSurface
+                /*val surface = mSurface
                     mSurface = null
                     renderer.detachOutputSurface().addListener({
                         surface!!.release()
                         st.release()
-                    }, ContextCompat.getMainExecutor(textureView.getContext()))*//*
+                    }, ContextCompat.getMainExecutor(textureView.getContext()))*/
+                Log.d("FAFA", "surfaceTextureListener : onSurfaceTextureDestroyed")
                 return false
             }
 
-            override fun onSurfaceTextureUpdated(st: SurfaceTexture) {}
-        }*/
+            override fun onSurfaceTextureUpdated(st: SurfaceTexture) {
+                Log.d("FAFA", "surfaceTextureListener : onSurfaceTextureUpdated")
+            }
+        }
         getCameraProvider()
 
         if (allPermissionsGranted()) {
@@ -82,6 +89,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             mRequestPermissions.launch(REQUIRED_PERMISSIONS)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mCameraProvider?.unbindAll()
     }
 
     // **************************** Permission handling code start *******************************//
@@ -152,10 +164,14 @@ class MainActivity : AppCompatActivity() {
         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         /*preview.setSurfaceProvider(cameraView?.)
         mCameraProvider!!.bindToLifecycle(this, cameraSelector, preview)*/
-        cameraView?.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        //cameraView?.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
         cameraView?.let {
 
-            preview.setSurfaceProvider(it.surfaceProvider)
+            val surfaceTexture = it.surfaceTexture
+            val surface = Surface(surfaceTexture)
+            val executor = Executors.newSingleThreadExecutor()
+            val previewSurfaceProvider = PreviewSurfaceProvider(surface, executor)
+            preview.setSurfaceProvider(executor,previewSurfaceProvider)
             mCameraProvider?.bindToLifecycle(this, cameraSelector, preview)
         }
     }
