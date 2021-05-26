@@ -16,6 +16,7 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
@@ -166,12 +167,14 @@ class MainActivity : AppCompatActivity() {
         //cameraView?.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
         cameraView?.let {
 
-            val surfaceTexture = it.getRenderer().getmSTexture()
-            val surface = Surface(surfaceTexture)
-            val executor = Executors.newSingleThreadExecutor()
-            val previewSurfaceProvider = PreviewSurfaceProvider(surface, executor)
-            preview.setSurfaceProvider(executor,previewSurfaceProvider)
-            mCameraProvider?.bindToLifecycle(this, cameraSelector, preview)
+            it.getRenderer().getmSTexture().observe(this, Observer {
+                val surface = Surface(it)
+                val executor = Executors.newSingleThreadExecutor()
+                val previewSurfaceProvider = PreviewSurfaceProvider(surface, executor)
+                preview.setSurfaceProvider(executor,previewSurfaceProvider)
+                mCameraProvider?.bindToLifecycle(this, cameraSelector, preview)
+            })
+
         }
     }
 

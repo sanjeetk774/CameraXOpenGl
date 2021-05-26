@@ -14,6 +14,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
+import androidx.lifecycle.MutableLiveData;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -49,9 +50,10 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private int hProgram;
 
     private Camera mCamera;
+    private MutableLiveData<SurfaceTexture> surfaceTextureMutableLiveData = new MutableLiveData<>();
 
-    public SurfaceTexture getmSTexture() {
-        return mSTexture;
+    public MutableLiveData<SurfaceTexture> getmSTexture() {
+        return surfaceTextureMutableLiveData;
     }
 
     private SurfaceTexture mSTexture;
@@ -94,8 +96,8 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         initTex();
         mSTexture = new SurfaceTexture ( hTex[0] );
-        mSTexture.setDefaultBufferSize(960, 1280);
         mSTexture.setOnFrameAvailableListener(this);
+        surfaceTextureMutableLiveData.postValue(mSTexture);
 
         // mCamera = Camera.open();
         try {
@@ -138,6 +140,7 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     }
 
     public void onSurfaceChanged (GL10 unused, int width, int height ) {
+        mSTexture.setDefaultBufferSize(width, height);
         GLES20.glViewport( 0, 0, width, height );
         Log.d("FAFA", "MainRenderer : onSurfaceChanged - width : " + width + " , height : " + height);
     }
