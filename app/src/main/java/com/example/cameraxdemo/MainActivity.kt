@@ -2,26 +2,20 @@ package com.example.cameraxdemo
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.SurfaceTexture
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.util.Log
+import android.util.Size
 import android.view.Surface
-import android.view.TextureView
-import android.view.TextureView.SurfaceTextureListener
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
-import java.util.*
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
@@ -33,25 +27,27 @@ class MainActivity : AppCompatActivity() {
         Manifest.permission.CAMERA
     )
     //var cameraView: PreviewView? = null
-    var cameraView: TextureView? = null
+    var cameraView: MyGLSurfaceView? = null
+    //var cameraView: TextureView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        cameraView = findViewById<TextureView>(R.id.cameraView)
-        cameraView?.surfaceTextureListener = object : SurfaceTextureListener {
+        val surfaceView = findViewById<MyGLSurfaceView>(R.id.cameraView)
+        cameraView = surfaceView
+        /*cameraView?.surfaceTextureListener = object : SurfaceTextureListener {
             private var mSurface: Surface? = null
             override fun onSurfaceTextureAvailable(
                 st: SurfaceTexture,
                 width: Int,
                 height: Int
             ) {
-                /*mSurface = Surface(st)
+                *//*mSurface = Surface(st)
                     renderer.attachOutputSurface(
                         mSurface, Size(width, height),
                         Surfaces.toSurfaceRotationDegrees(textureView.getDisplay().getRotation())
-                    )*/
+                    )*//*
                 Log.d("FAFA", "surfaceTextureListener : onSurfaceTextureAvailable")
             }
 
@@ -60,20 +56,20 @@ class MainActivity : AppCompatActivity() {
                 width: Int,
                 height: Int
             ) {
-                /*renderer.attachOutputSurface(
+                *//*renderer.attachOutputSurface(
                         mSurface, Size(width, height),
                         Surfaces.toSurfaceRotationDegrees(textureView.getDisplay().getRotation())
-                    )*/
+                    )*//*
                 Log.d("FAFA", "surfaceTextureListener : onSurfaceTextureSizeChanged")
             }
 
             override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
-                /*val surface = mSurface
+                *//*val surface = mSurface
                     mSurface = null
                     renderer.detachOutputSurface().addListener({
                         surface!!.release()
                         st.release()
-                    }, ContextCompat.getMainExecutor(textureView.getContext()))*/
+                    }, ContextCompat.getMainExecutor(textureView.getContext()))*//*
                 Log.d("FAFA", "surfaceTextureListener : onSurfaceTextureDestroyed")
                 return false
             }
@@ -81,7 +77,7 @@ class MainActivity : AppCompatActivity() {
             override fun onSurfaceTextureUpdated(st: SurfaceTexture) {
                 Log.d("FAFA", "surfaceTextureListener : onSurfaceTextureUpdated")
             }
-        }
+        }*/
         getCameraProvider()
 
         if (allPermissionsGranted()) {
@@ -153,13 +149,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startCamera() {
+
+        /*startAnalyzer()
+        return*/
         // Keep screen on for this app. This is just for convenience, and is not required.
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Set the aspect ratio of Preview to match the aspect ratio of the view finder (defined
         // with ConstraintLayout).
         val preview =
-            Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9).build()
+            Preview.Builder().setTargetResolution(Size(960, 1200)).build()
         //mRenderer.attachInputPreview(preview)
         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         /*preview.setSurfaceProvider(cameraView?.)
@@ -167,13 +166,32 @@ class MainActivity : AppCompatActivity() {
         //cameraView?.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
         cameraView?.let {
 
-            val surfaceTexture = it.surfaceTexture
+            val surfaceTexture = it.getRenderer().getmSTexture()
             val surface = Surface(surfaceTexture)
             val executor = Executors.newSingleThreadExecutor()
             val previewSurfaceProvider = PreviewSurfaceProvider(surface, executor)
             preview.setSurfaceProvider(executor,previewSurfaceProvider)
             mCameraProvider?.bindToLifecycle(this, cameraSelector, preview)
         }
+    }
+
+    private fun startAnalyzer() {
+        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            val imageAnalysis = ImageAnalysis.Builder()
+                .setTargetName("ImageAnalysis")
+                .build()
+
+        imageAnalysis.setAnalyzer(
+            ContextCompat.getMainExecutor(this),
+            cameraView?.getRenderer()!!
+        )
+
+        mCameraProvider?.bindToLifecycle(
+            this, cameraSelector,
+            imageAnalysis
+        )
+
+
     }
 
     private fun getCamera() {
