@@ -1,31 +1,24 @@
 package com.example.cameraxdemo;
 
-import android.annotation.SuppressLint;
-import android.graphics.Bitmap;
 import android.graphics.Camera;
 import android.graphics.SurfaceTexture;
-import android.media.Image;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.opengl.GLUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.ImageProxy;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.Objects;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener, ImageAnalysis.Analyzer {
+public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
     private final String vss =
             "attribute vec2 vPosition;\n" +
                     "attribute vec2 vTexCoord;\n" +
@@ -49,11 +42,10 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private FloatBuffer pTexCoord;
     private int hProgram;
 
-    private Camera mCamera;
-    private MutableLiveData<SurfaceTexture> surfaceTextureMutableLiveData = new MutableLiveData<>();
+    private MutableLiveData<SurfaceTexture> surfaceTextureLiveData = new MediatorLiveData<>();
 
-    public MutableLiveData<SurfaceTexture> getmSTexture() {
-        return surfaceTextureMutableLiveData;
+    public LiveData<SurfaceTexture> getmSTexture() {
+        return surfaceTextureLiveData;
     }
 
     private SurfaceTexture mSTexture;
@@ -62,31 +54,24 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     private MyGLSurfaceView mView;
 
-    MainRenderer ( MyGLSurfaceView view ) {
+    MainRenderer(MyGLSurfaceView view) {
         mView = view;
-        /*float[] vtmp = {
-                1.0f, -1.0f,
-                -1.0f, -1.0f,
-                1.0f, 1.0f,
-                -1.0f, 1.0f
-        };*/
-        float[] vtmp = { -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f };
+        float[] vtmp = {-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f};
         float[] ttmp = {
                 1.0f, 1.0f,
                 0.0f, 1.0f,
                 1.0f, 0.0f,
                 0.0f, 0.0f
         };
-        pVertex = ByteBuffer.allocateDirect(8*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        pVertex.put ( vtmp );
+        pVertex = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        pVertex.put(vtmp);
         pVertex.position(0);
-        pTexCoord = ByteBuffer.allocateDirect(8*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        pTexCoord.put ( ttmp );
+        pTexCoord = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        pTexCoord.put(ttmp);
         pTexCoord.position(0);
     }
 
-    public void close()
-    {
+    public void close() {
         mUpdateST = false;
         mSTexture.release();
         deleteTex();
@@ -95,26 +80,20 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         initTex();
-        mSTexture = new SurfaceTexture ( hTex[0] );
+        mSTexture = new SurfaceTexture(hTex[0]);
+        Log.d("FAFA", "updated live data for surface texture");
         mSTexture.setOnFrameAvailableListener(this);
-        surfaceTextureMutableLiveData.postValue(mSTexture);
+        surfaceTextureLiveData.postValue(mSTexture);
+        GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
 
-        // mCamera = Camera.open();
-        try {
-            //mCamera.setPreviewTexture(mSTexture);
-        } catch (Exception ioe ) {
-        }
-
-        GLES20.glClearColor ( 1.0f, 1.0f, 0.0f, 1.0f );
-
-        hProgram = loadShader ( vss, fss );
+        hProgram = loadShader(vss, fss);
     }
 
-    public void onDrawFrame (GL10 unused ) {
-        GLES20.glClear( GLES20.GL_COLOR_BUFFER_BIT );
+    public void onDrawFrame(GL10 unused) {
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-        synchronized(this) {
-            if ( mUpdateST ) {
+        synchronized (this) {
+            if (mUpdateST) {
                 mSTexture.updateTexImage();
                 mUpdateST = false;
             }
@@ -123,15 +102,15 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         GLES20.glUseProgram(hProgram);
 
         int ph = GLES20.glGetAttribLocation(hProgram, "vPosition");
-        int tch = GLES20.glGetAttribLocation ( hProgram, "vTexCoord" );
-        int th = GLES20.glGetUniformLocation ( hProgram, "sTexture" );
+        int tch = GLES20.glGetAttribLocation(hProgram, "vTexCoord");
+        int th = GLES20.glGetUniformLocation(hProgram, "sTexture");
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0]);
         GLES20.glUniform1i(th, 0);
 
-        GLES20.glVertexAttribPointer(ph, 2, GLES20.GL_FLOAT, false, 4*2, pVertex);
-        GLES20.glVertexAttribPointer(tch, 2, GLES20.GL_FLOAT, false, 4*2, pTexCoord );
+        GLES20.glVertexAttribPointer(ph, 2, GLES20.GL_FLOAT, false, 4 * 2, pVertex);
+        GLES20.glVertexAttribPointer(tch, 2, GLES20.GL_FLOAT, false, 4 * 2, pTexCoord);
         GLES20.glEnableVertexAttribArray(ph);
         GLES20.glEnableVertexAttribArray(tch);
 
@@ -139,25 +118,15 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         GLES20.glFlush();
     }
 
-    public void onSurfaceChanged (GL10 unused, int width, int height ) {
+    public void onSurfaceChanged(GL10 unused, int width, int height) {
         mSTexture.setDefaultBufferSize(width, height);
-        GLES20.glViewport( 0, 0, width, height );
+        GLES20.glViewport(0, 0, width, height);
         Log.d("FAFA", "MainRenderer : onSurfaceChanged - width : " + width + " , height : " + height);
-    }
-
-    @Override
-    public void analyze(@NonNull ImageProxy imageProxy) {
-        @SuppressLint("UnsafeOptInUsageError") Image image = imageProxy.getImage();
-        if (image != null) {
-            Bitmap bitmap = ExtensionsKt.toBitmap(image);
-            //GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, bitmap);
-            mView.requestRender();
-        }
     }
 
     private void initTex() {
         hTex = new int[1];
-        GLES20.glGenTextures ( 1, hTex, 0 );
+        GLES20.glGenTextures(1, hTex, 0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0]);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
@@ -166,15 +135,15 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     }
 
     private void deleteTex() {
-        GLES20.glDeleteTextures ( 1, hTex, 0 );
+        GLES20.glDeleteTextures(1, hTex, 0);
     }
 
-    public synchronized void onFrameAvailable ( SurfaceTexture st ) {
+    public synchronized void onFrameAvailable(SurfaceTexture st) {
         mUpdateST = true;
         mView.requestRender();
     }
 
-    private static int loadShader ( String vss, String fss ) {
+    private static int loadShader(String vss, String fss) {
         int vshader = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
         GLES20.glShaderSource(vshader, vss);
         GLES20.glCompileShader(vshader);
@@ -182,7 +151,7 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         GLES20.glGetShaderiv(vshader, GLES20.GL_COMPILE_STATUS, compiled, 0);
         if (compiled[0] == 0) {
             Log.e("Shader", "Could not compile vshader");
-            Log.v("Shader", "Could not compile vshader:"+GLES20.glGetShaderInfoLog(vshader));
+            Log.v("Shader", "Could not compile vshader:" + GLES20.glGetShaderInfoLog(vshader));
             GLES20.glDeleteShader(vshader);
             vshader = 0;
         }
@@ -193,7 +162,7 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         GLES20.glGetShaderiv(fshader, GLES20.GL_COMPILE_STATUS, compiled, 0);
         if (compiled[0] == 0) {
             Log.e("Shader", "Could not compile fshader");
-            Log.v("Shader", "Could not compile fshader:"+GLES20.glGetShaderInfoLog(fshader));
+            Log.v("Shader", "Could not compile fshader:" + GLES20.glGetShaderInfoLog(fshader));
             GLES20.glDeleteShader(fshader);
             fshader = 0;
         }
