@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                             )
                         ).build()
                 //mRenderer.attachInputPreview(preview)
-                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                val cameraSelector = CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
                 glSurfaceView.getRenderer().getmSTexture().observe(this, Observer {
                     val surface = Surface(it)
                     val executor = Executors.newSingleThreadExecutor()
