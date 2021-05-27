@@ -56,13 +56,37 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     MainRenderer(MyGLSurfaceView view) {
         mView = view;
-        float[] vtmp = {-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f};
-        float[] ttmp = {
-                1.0f, 1.0f,
-                0.0f, 1.0f,
-                1.0f, 0.0f,
-                0.0f, 0.0f
+        float[] vtmp = {
+                -1.0f, -1.0f,
+                1.0f, -1.0f,
+                -0.8f, 1.0f,
+                0.8f, 1.0f
         };
+        /*float[] ttmp = {
+                0, 1, // X1,Y1
+                1, 1, // X2,Y2
+                0, 0, // X3,Y3
+                1, 0 // X4,Y4
+        };*/
+        float[] ttmp = {
+                1, 0, // X1,Y1
+                0, 0, // X2,Y2
+                1, 1, // X3,Y3
+                0, 1 // X4,Y4
+        };
+        /*
+         -1, -1      1, 1
+         -1, 1      0, 1
+         1, -1      1, 0
+         1, 1       0, 0
+
+         -1, 1      1, 1       0, 0     1, 0
+            ***********         **********
+            *         *         *        *
+            *         *         *        *
+            ***********         **********
+         -1,-1      1, -1      0,1       1,1
+         */
         pVertex = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         pVertex.put(vtmp);
         pVertex.position(0);
