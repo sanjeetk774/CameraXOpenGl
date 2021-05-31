@@ -7,11 +7,18 @@ import androidx.camera.core.SurfaceRequest
 import androidx.core.util.Consumer
 import java.util.concurrent.Executor
 
-class PreviewSurfaceProvider(val surface: Surface, val executor: Executor) : Preview.SurfaceProvider {
+class PreviewSurfaceProvider(private val renderer: MainRenderer, private val executor: Executor) : Preview.SurfaceProvider {
 
     override fun onSurfaceRequested(request: SurfaceRequest) {
-        request.provideSurface(surface, executor, Consumer { result: SurfaceRequest.Result ->  {
-            Log.d("FAFA", "PreviewSurfaceProvider onSurfaceRequested consumer result : ${result.resultCode}")
-        }})
+        val surface = Surface(renderer.createTexture())
+        request.provideSurface(surface, executor, Consumer { result: SurfaceRequest.Result ->
+            run {
+                surface.release()
+                Log.d(
+                    "FAFA",
+                    "PreviewSurfaceProvider onSurfaceRequested consumer result : ${result.resultCode}"
+                )
+            }
+        })
     }
 }

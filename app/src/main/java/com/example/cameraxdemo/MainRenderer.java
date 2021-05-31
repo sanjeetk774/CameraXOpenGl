@@ -59,15 +59,9 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         float[] vtmp = {
                 -1.0f, -1.0f,
                 1.0f, -1.0f,
-                -0.8f, 1.0f,
-                0.8f, 1.0f
+                -1.0f, 1.0f,
+                1.0f, 1.0f
         };
-        /*float[] ttmp = {
-                0, 1, // X1,Y1
-                1, 1, // X2,Y2
-                0, 0, // X3,Y3
-                1, 0 // X4,Y4
-        };*/
         float[] ttmp = {
                 1, 0, // X1,Y1
                 0, 0, // X2,Y2
@@ -103,14 +97,18 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
+
+        hProgram = loadShader(vss, fss);
+    }
+
+    public SurfaceTexture createTexture() {
         initTex();
         mSTexture = new SurfaceTexture(hTex[0]);
         Log.d("FAFA", "updated live data for surface texture");
         mSTexture.setOnFrameAvailableListener(this);
         surfaceTextureLiveData.postValue(mSTexture);
-        GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
-
-        hProgram = loadShader(vss, fss);
+        return mSTexture;
     }
 
     public void onDrawFrame(GL10 unused) {
@@ -130,7 +128,7 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         int th = GLES20.glGetUniformLocation(hProgram, "sTexture");
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0]);
+//        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0]);
         GLES20.glUniform1i(th, 0);
 
         GLES20.glVertexAttribPointer(ph, 2, GLES20.GL_FLOAT, false, 4 * 2, pVertex);
@@ -143,7 +141,7 @@ public class MainRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     }
 
     public void onSurfaceChanged(GL10 unused, int width, int height) {
-        mSTexture.setDefaultBufferSize(width, height);
+        //mSTexture.setDefaultBufferSize(width, height);
         GLES20.glViewport(0, 0, width, height);
         Log.d("FAFA", "MainRenderer : onSurfaceChanged - width : " + width + " , height : " + height);
     }

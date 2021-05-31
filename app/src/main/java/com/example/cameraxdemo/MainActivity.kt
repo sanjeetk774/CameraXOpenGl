@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
-import android.view.Surface
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResultCallback
@@ -17,7 +16,6 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
@@ -38,6 +36,11 @@ class MainActivity : AppCompatActivity() {
         cameraView = surfaceView
         getCameraProvider()
 
+
+    }
+
+    override fun onStart() {
+        super.onStart()
         if (allPermissionsGranted()) {
             getCamera()
         } else {
@@ -45,8 +48,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onStop() {
+        super.onStop()
         mCameraProvider?.unbindAll()
     }
 
@@ -130,14 +133,12 @@ class MainActivity : AppCompatActivity() {
                         ).build()
                 //mRenderer.attachInputPreview(preview)
                 val cameraSelector = CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
-                glSurfaceView.getRenderer().getmSTexture().observe(this, Observer {
-                    val surface = Surface(it)
-                    val executor = Executors.newSingleThreadExecutor()
-                    val previewSurfaceProvider = PreviewSurfaceProvider(surface, executor)
-                    preview.setSurfaceProvider(executor, previewSurfaceProvider)
-                    Log.d("FAFA", "bound camera to lifecycle")
-                    mCameraProvider?.bindToLifecycle(this, cameraSelector, preview)
-                })
+                val rederer = glSurfaceView.getRenderer()
+                val executor = Executors.newSingleThreadExecutor()
+                val previewSurfaceProvider = PreviewSurfaceProvider(rederer, executor)
+                preview.setSurfaceProvider(executor, previewSurfaceProvider)
+                Log.d("FAFA", "bound camera to lifecycle")
+                mCameraProvider?.bindToLifecycle(this, cameraSelector, preview)
             }
         }
 
